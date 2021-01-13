@@ -1,11 +1,11 @@
 package com.example.android.customfancontrol
 
 import android.content.Context
-import android.graphics.Paint
-import android.graphics.PointF
-import android.graphics.Typeface
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import java.lang.Math.*
+
 
 //TODO: Step 1.6
 private enum class FanSpeed(val label: Int) {
@@ -30,7 +30,6 @@ class DialView @JvmOverloads constructor(context: Context,
     private val pointPosition: PointF = PointF(0.0f, 0.0f)
 
     //TODO 1.8
-
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
@@ -38,7 +37,39 @@ class DialView @JvmOverloads constructor(context: Context,
         typeface = Typeface.create( "", Typeface.BOLD)
     }
 
-
-
-
+    //TODO: Step 2.1
+    override fun onSizeChanged(width: Int, height: Int, oldWidth: Int, oldHeight: Int) {
+        radius = (min(width, height) / 2.0 * 0.8).toFloat()
     }
+
+    //TODO: Step 2.2
+    private fun PointF.computeXYForSpeed(pos: FanSpeed, radius: Float) {
+        // Angles are in radians.
+        val startAngle = Math.PI * (9 / 8.0)
+        val angle = startAngle + pos.ordinal * (Math.PI / 4)
+        x = (radius * cos(angle)).toFloat() + width / 2
+        y = (radius * sin(angle)).toFloat() + height / 2
+    }
+
+    //TODO: Step 2.3
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        // 1) Set dial background color to green if selection not off.
+        paint.color = if (fanSpeed == FanSpeed.OFF) Color.GRAY else Color.GREEN
+        // 2) Draw the dial.
+        canvas.drawCircle((width / 2).toFloat(), (height / 2).toFloat(), radius, paint)
+        // 3) Draw the indicator circle.
+        val markerRadius = radius + RADIUS_OFFSET_INDICATOR
+        pointPosition.computeXYForSpeed(fanSpeed, markerRadius)
+        paint.color = Color.BLACK
+        canvas.drawCircle(pointPosition.x, pointPosition.y, radius/12, paint)
+        // Draw the text labels.
+        val labelRadius = radius + RADIUS_OFFSET_LABEL
+        for (i in FanSpeed.values()) {
+            pointPosition.computeXYForSpeed(i, labelRadius)
+            val label = resources.getString(i.label)
+            canvas.drawText(label, pointPosition.x, pointPosition.y, paint)
+        }
+    }
+
+}
